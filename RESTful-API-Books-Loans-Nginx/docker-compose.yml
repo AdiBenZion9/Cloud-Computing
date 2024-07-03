@@ -1,0 +1,70 @@
+version: '1'
+
+services:
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+
+  books:
+    build: ./books
+    restart: always
+    volumes:
+      - type: bind
+        source: ./books
+        target: /app
+    ports:
+      - "5001:5001"
+    expose:
+      - 80
+    depends_on:
+      - "mongo"
+
+  loans:
+    build: ./loans
+    restart: always
+    volumes:
+      - type: bind
+        source: ./loans
+        target: /app
+    ports:
+      - "5002:5002"
+    expose:
+      - 80
+    environment:
+      - BOOKS_SERVICE_URL= http://books:5001
+    depends_on:
+      - "mongo"
+      - "books"
+
+  loans2:
+    build: ./loans
+    restart: always
+    volumes:
+      - type: bind
+        source: ./loans
+        target: /app
+    ports:
+      - "5003:5002"
+    expose:
+      - 80
+    environment:
+      - BOOKS_SERVICE_URL= http://books:5001
+    depends_on:
+      - "mongo"
+      - "books"
+
+  nginx:
+    image: nginx:latest # pulling image from DockerHub
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    expose:
+      - 80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - "books"
+      - "loans"
+      - "loans2"
